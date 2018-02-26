@@ -144,7 +144,7 @@ print('There are %d total human images.' % len(human_files))
 import cv2
 import matplotlib.pyplot as plt
 
-get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 
 # extract pre-trained face detector
 face_cascade = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_alt.xml')
@@ -214,6 +214,12 @@ def face_detector(img_path):
 # 
 # __Answer:__ 
 
+
+""" TODO Add
+99/100: 99% of the human files detected a human face.
+11/100: 11% of the dog files detected a human face.
+"""
+
 # In[23]:
 
 
@@ -221,8 +227,8 @@ human_files_short = human_files[:100]
 dog_files_short = train_files[:100]
 # Do NOT modify the code above this line.
 
-## TODO: Test the performance of the face_detector algorithm 
-## on the images in human_files_short and dog_files_short.
+# TODO: Test the performance of the face_detector algorithm
+# on the images in human_files_short and dog_files_short.
 
 # Loop through images and determine if they found a face
 # Pass image location to face_detector
@@ -240,6 +246,22 @@ print("The percent of faces detected is %s" % str(int(sum(dog_test) / len(dog_te
 # images that does not necessitate an image with a clearly presented face?
 # 
 # __Answer:__
+""" TODO Add
+This is a reasonable expectation of the user, however, improvements here would improve the user experience.
+If we were going to expand the capabilities of the detection then we need to train a CNN with labeled
+images of humans from various angles. The algorithm would need to be able to identify other body parts
+of humans and to be able to distinguish them from body parts of other animals as well as various objects. 
+The more data we can use to train the CNN from challenging angles, the better the algorithm will be at 
+detecting humans from any image input by a user.
+
+Another idea, and one that is more feasible with this project is to train a new CNN using all of the human and dog
+images to teach it to distinguish between a dog and a human. If the algorithm uses both the pretrained face detector
+and the human-dog distinguisher model then it may be able to improve it's ability to detect humans and not mistake
+dogs for humans.
+
+"""
+
+
 # 
 # We suggest the face detector from OpenCV as a potential way to detect human images in your algorithm, but you are
 # free to explore other approaches, especially approaches that make use of deep learning :).  Please use the code
@@ -249,9 +271,7 @@ print("The percent of faces detected is %s" % str(int(sum(dog_test) / len(dog_te
 # In[ ]:
 
 
-## (Optional) TODO: Report the performance of another  
-## face detection algorithm on the LFW dataset
-### Feel free to use as many code cells as needed.
+# TODO import human_detection.py
 
 
 # ---
@@ -372,10 +392,10 @@ def ResNet50_predict_labels(img_path):
 # In[ ]:
 
 
-### returns "True" if a dog is detected in the image stored at img_path
+# returns "True" if a dog is detected in the image stored at img_path
 def dog_detector(img_path):
     prediction = ResNet50_predict_labels(img_path)
-    return ((prediction <= 268) & (prediction >= 151))
+    return (prediction <= 268) & (prediction >= 151)
 
 
 # ### (IMPLEMENTATION) Assess the Dog Detector
@@ -389,8 +409,8 @@ def dog_detector(img_path):
 # In[ ]:
 
 
-### TODO: Test the performance of the dog_detector function
-### on the images in human_files_short and dog_files_short.
+# TODO: Test the performance of the dog_detector function
+# on the images in human_files_short and dog_files_short.
 
 
 # ---
@@ -506,11 +526,11 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 
 from keras.callbacks import ModelCheckpoint
 
-### TODO: specify the number of epochs that you would like to use to train the model.
+# TODO: specify the number of epochs that you would like to use to train the model.
 
 epochs = ...
 
-### Do NOT modify the code below this line.
+# Do NOT modify the code below this line.
 
 checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.from_scratch.hdf5',
                                verbose=1, save_best_only=True)
@@ -666,7 +686,7 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Obtain bottleneck features from another pre-trained CNN.
+# TODO: Obtain bottleneck features from another pre-trained CNN.
 
 
 # ### (IMPLEMENTATION) Model Architecture
@@ -686,7 +706,7 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Define your architecture.
+# TODO: Define your architecture.
 
 
 # ### (IMPLEMENTATION) Compile the Model
@@ -694,7 +714,7 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Compile the model.
+# TODO: Compile the model.
 
 
 # ### (IMPLEMENTATION) Train the Model
@@ -709,7 +729,7 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Train the model.
+# TODO: Train the model.
 
 
 # ### (IMPLEMENTATION) Load the Model with the Best Validation Loss
@@ -717,7 +737,7 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Load the model weights with the best validation loss.
+# TODO: Load the model weights with the best validation loss.
 
 
 # ### (IMPLEMENTATION) Test the Model
@@ -727,7 +747,7 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Calculate classification accuracy on the test dataset.
+# TODO: Calculate classification accuracy on the test dataset.
 
 
 # ### (IMPLEMENTATION) Predict Dog Breed with the Model
@@ -751,8 +771,8 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Write a function that takes a path to an image as input
-### and returns the dog breed that is predicted by the model.
+# TODO: Write a function that takes a path to an image as input
+# and returns the dog breed that is predicted by the model.
 
 
 # ---
@@ -778,8 +798,8 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-### TODO: Write your algorithm.
-### Feel free to use as many code cells as needed.
+# TODO: Write your algorithm.
+# Feel free to use as many code cells as needed.
 
 
 # ---
@@ -803,6 +823,6 @@ def VGG16_predict_breed(img_path):
 # In[ ]:
 
 
-## TODO: Execute your algorithm from Step 6 on
-## at least 6 images on your computer.
-## Feel free to use as many code cells as needed.
+# TODO: Execute your algorithm from Step 6 on
+# at least 6 images on your computer.
+# Feel free to use as many code cells as needed.
