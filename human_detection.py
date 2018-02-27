@@ -146,11 +146,6 @@ with tf.device("/cpu:0"):
     # compile the model
     model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
-    # Delete, test train
-    # hist = model.fit(x_train, y_train, batch_size=32, epochs=100,
-    #                  validation_data=(x_valid, y_valid), callbacks=[checkpointer],
-    #                  verbose=2, shuffle=True)
-
     # Check pointer for storing best model
     checkpointer = ModelCheckpoint(filepath='model.weights.best.hdf5', verbose=1,
                                    save_best_only=True)

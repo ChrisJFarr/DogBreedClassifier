@@ -290,8 +290,10 @@ dogs for humans.
 
 
 from keras.applications.resnet50 import ResNet50
-
+import tensorflow as tf
 # define ResNet50 model
+
+# with tf.device("/cpu:0"):
 ResNet50_model = ResNet50(weights='imagenet')
 
 # ### Pre-process the Data
@@ -400,14 +402,24 @@ def dog_detector(img_path):
 
 # ### (IMPLEMENTATION) Assess the Dog Detector
 # 
-# __Question 3:__ Use the code cell below to test the performance of your `dog_detector` function.  
-# - What percentage of the images in `human_files_short` have a detected dog?  
+# __Question 3:__ Use the code cell below to test the performance of your `dog_detector` function.
+# - What percentage of the images in `human_files_short` have a detected dog?
 # - What percentage of the images in `dog_files_short` have a detected dog?
 # 
-# __Answer:__ 
+# __Answer:__
+"""
+100% of the dog images have detected a dog.
+1% of the human images have detected a dog, but I don't want to embarass that person and see who it was.
+
+"""
 
 # In[ ]:
 
+dog_detections = [dog_detector(img) for img in dog_files_short]
+import numpy as np
+np.mean(dog_detections)
+dog_detections_humans = [dog_detector(img) for img in human_files_short]
+np.mean(dog_detections_humans)
 
 # TODO: Test the performance of the dog_detector function
 # on the images in human_files_short and dog_files_short.
@@ -473,6 +485,8 @@ train_tensors = paths_to_tensor(train_files).astype('float32') / 255
 valid_tensors = paths_to_tensor(valid_files).astype('float32') / 255
 test_tensors = paths_to_tensor(test_files).astype('float32') / 255
 
+valid_tensors.shape
+
 # ### (IMPLEMENTATION) Model Architecture
 # 
 # Create a CNN to classify dog breed.  At the end of your code cell block, summarize the layers of your model by
@@ -497,22 +511,45 @@ test_tensors = paths_to_tensor(test_files).astype('float32') / 255
 
 from keras.layers import Conv2D, MaxPooling2D, GlobalAveragePooling2D
 from keras.layers import Dropout, Flatten, Dense
-from keras.models import Sequential
+from keras.models import Sequential, load_model
+from keras.callbacks import ModelCheckpoint
 
 model = Sequential()
 
-### TODO: Define your architecture.
+# TODO: Define your architecture.
+model.add(Conv2D(filters=8, kernel_size=2, padding='same', activation='relu',
+                 input_shape=(224, 224, 3)))
+model.add(MaxPooling2D(pool_size=2))
+model.add(Conv2D(filters=16, kernel_size=2, padding='same', activation='relu'))
+model.add(MaxPooling2D(pool_size=2))
+model.add(Conv2D(filters=32, kernel_size=2, padding='same', activation='relu'))
+model.add(MaxPooling2D(pool_size=2))
+model.add(Dropout(0.3))
+model.add(Flatten())
+model.add(Dense(500, activation='relu'))
+model.add(Dropout(0.4))
+model.add(Dense(train_targets.shape[1], activation='softmax'))
+
+# compile the model
+model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+# Check pointer for storing best model
+checkpointer = ModelCheckpoint(filepath='model.weights.best.hdf5', verbose=1,
+                               save_best_only=True)
 
 model.summary()
+
+hist = model.fit(train_tensors, train_targets, batch_size=250, epochs=100,
+                 validation_data=(valid_tensors, valid_targets), callbacks=[checkpointer],
+                 verbose=2, shuffle=True)
+
+model.load_weights('model.weights.best.hdf5')
 
 # ### Compile the Model
 
 # In[ ]:
 
-
-model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-
-# ### (IMPLEMENTATION) Train the Model
+# (IMPLEMENTATION) Train the Model
 # 
 # Train your model in the code cell below.  Use model checkpointing to save the model that attains the best
 # validation loss.
@@ -572,12 +609,48 @@ print('Test accuracy: %.4f%%' % test_accuracy)
 
 # In[ ]:
 
+import numpy as np
+from keras.layers import Conv2D, MaxPooling2D, GlobalAveragePooling2D
+from keras.layers import Dropout, Flatten, Dense
+from keras.models import Sequential, load_model
+from keras.callbacks import ModelCheckpoint
+
+from sklearn.datasets import load_files
+from keras.utils import np_utils
+import numpy as np
+from glob import glob
+
+
+# define function to load train, test, and validation datasets
+def load_dataset(path):
+    data = load_files(path)
+    dog_files = np.array(data['filenames'])
+    dog_targets = np_utils.to_categorical(np.array(data['target']), 133)
+    return dog_files, dog_targets
+
+
+# load train, test, and validation datasets
+train_files, train_targets = load_dataset('dogImages/train')
+valid_files, valid_targets = load_dataset('dogImages/valid')
+test_files, test_targets = load_dataset('dogImages/test')
+
 
 bottleneck_features = np.load('bottleneck_features/DogVGG16Data.npz')
 train_VGG16 = bottleneck_features['train']
 valid_VGG16 = bottleneck_features['valid']
 test_VGG16 = bottleneck_features['test']
 
+
+# Load and transform datasets
+# from keras.applications import VGG16
+#
+# conv_base = VGG16(weights='imagenet',
+#                   include_top=False,
+#                   input_shape=(224, 224, 3))
+#
+# train_VGG16_v2 = conv_base.predict(train_tensors, batch_size=32)
+# valid_VGG16_v2 = conv_base.predict(valid_tensors, batch_size=32)
+# test_VGG16_v2 = conv_base.predict(test_tensors, batch_size=32)
 # ### Model Architecture
 # 
 # The model uses the the pre-trained VGG-16 model as a fixed feature extractor, where the last convolutional output
@@ -610,7 +683,7 @@ checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.VGG16.hdf5',
 
 VGG16_model.fit(train_VGG16, train_targets,
                 validation_data=(valid_VGG16, valid_targets),
-                epochs=20, batch_size=20, callbacks=[checkpointer], verbose=1)
+                epochs=500, batch_size=20, callbacks=[checkpointer], verbose=1)
 
 # ### Load the Model with the Best Validation Loss
 
