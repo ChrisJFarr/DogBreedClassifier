@@ -757,10 +757,38 @@ def VGG16_predict_breed(img_path):
 #     test_{network} = bottleneck_features['test']
 
 # In[ ]:
+# define function to load train, test, and validation datasets
+import numpy as np
+from keras.layers import Conv2D, MaxPooling2D, GlobalAveragePooling2D
+from keras.layers import Dropout, Flatten, Dense
+from keras.models import Sequential, load_model
+from keras.callbacks import ModelCheckpoint
 
+from sklearn.datasets import load_files
+from keras.utils import np_utils
+import numpy as np
+from glob import glob
+from sklearn.datasets import load_files
+from keras.utils import np_utils
+
+def load_dataset(path):
+    data = load_files(path)
+    dog_files = np.array(data['filenames'])
+    dog_targets = np_utils.to_categorical(np.array(data['target']), 133)
+    return dog_files, dog_targets
+
+
+# load train, test, and validation datasets
+train_files, train_targets = load_dataset('dogImages/train')
+valid_files, valid_targets = load_dataset('dogImages/valid')
+test_files, test_targets = load_dataset('dogImages/test')
 
 # TODO: Obtain bottleneck features from another pre-trained CNN.
-
+import numpy as np
+bottleneck_features = np.load('bottleneck_features/DogResnet50Data.npz')
+train_resnet = bottleneck_features['train']
+valid_resnet = bottleneck_features['valid']
+test_resnet = bottleneck_features['test']
 
 # ### (IMPLEMENTATION) Model Architecture
 # 
@@ -774,56 +802,53 @@ def VGG16_predict_breed(img_path):
 # 
 # __Answer:__ 
 # 
-# 
-
-# In[ ]:
-
-
+#
+train_resnet.shape
 # TODO: Define your architecture.
-
-
-# ### (IMPLEMENTATION) Compile the Model
-
-# In[ ]:
-
+resnet_model = Sequential()
+resnet_model.add(GlobalAveragePooling2D(input_shape=train_resnet.shape[1:]))  # starter
+resnet_model.add(Dense(133, activation='softmax'))  # (starter: 79.78)
 
 # TODO: Compile the model.
+# ### (IMPLEMENTATION) Compile the Model
+resnet_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
 
+checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.resnet_model.hdf5',
+                               verbose=1, save_best_only=True)
+
+# TODO: Train the model.
 # ### (IMPLEMENTATION) Train the Model
-# 
+#
 # Train your model in the code cell below.  Use model checkpointing to save the model that attains the best
 # validation loss.
-# 
+#
 # You are welcome to [augment the training data](
 # https://blog.keras.io/building-powerful-image-classification-models-using-very-little-data.html), but this is not a
 #  requirement.
-
-# In[ ]:
-
-
-# TODO: Train the model.
-
-
-# ### (IMPLEMENTATION) Load the Model with the Best Validation Loss
-
-# In[ ]:
+resnet_model.fit(train_resnet, train_targets,
+                 validation_data=(valid_resnet, valid_targets),
+                 epochs=200, batch_size=20, callbacks=[checkpointer], verbose=1)
 
 
 # TODO: Load the model weights with the best validation loss.
+# (IMPLEMENTATION) Load the Model with the Best Validation Loss
+# Load the Model with the Best Validation Loss
+resnet_model.load_weights('saved_models/weights.best.resnet_model.hdf5')
 
-
-# ### (IMPLEMENTATION) Test the Model
-# 
-# Try out your model on the test dataset of dog images. Ensure that your test accuracy is greater than 60%.
-
-# In[ ]:
-
-
+# Test the Model
+# get index of predicted dog breed for each image in test set
+resnet_predictions = [np.argmax(resnet_model.predict(np.expand_dims(feature, axis=0))) for feature in test_resnet]
 # TODO: Calculate classification accuracy on the test dataset.
+# ### (IMPLEMENTATION) Test the Model
+#
+# Try out your model on the test dataset of dog images. Ensure that your test accuracy is greater than 60%.
+# report test accuracy
+test_accuracy = 100 * np.sum(np.array(resnet_predictions) == np.argmax(test_targets, axis=1)) / len(resnet_predictions)
+print('Test accuracy: %.4f%%' % test_accuracy)
 
 
-# ### (IMPLEMENTATION) Predict Dog Breed with the Model
+# (IMPLEMENTATION) Predict Dog Breed with the Model
 # 
 # Write a function that takes an image path as input and returns the dog breed (`Affenpinscher`, `Afghan_hound`,
 # etc) that is predicted by your model.

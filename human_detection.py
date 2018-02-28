@@ -58,6 +58,11 @@ del human_files
 
 # from sklearn.preprocessing import MinMaxScaler
 # scaler = MinMaxScaler(feature_range=(0.01, 0.99))
+print()
+
+def reader(img):
+    print(img)
+    return cv2.imread(img)
 
 
 # Read in data and create arrays with labels
@@ -65,7 +70,8 @@ def combine_shuffle_size_scale(dogs, humans, size):
     # Read images, create target variables
     h_list = [cv2.imread(img) for img in humans]
     h_labels = [[.99, 0.01] for _ in range(len(humans))]
-    d_list = [cv2.imread(img) for img in dogs]
+    # d_list = [cv2.imread(img) for img in dogs]
+    d_list = [reader(img) for img in dogs]
     d_labels = [[0.01, .99] for _ in range(len(dogs))]
     # Combine and shuffle dataset
     x = h_list + d_list
