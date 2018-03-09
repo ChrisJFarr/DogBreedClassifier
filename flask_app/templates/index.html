@@ -1,0 +1,13 @@
+<html>
+  <head>
+    <title>Video Streaming Demonstration</title>
+  </head>
+  <body>
+    <h1>Video Streaming Demonstration</h1>
+    <img src="{{ user_image }}" alt="User Image">
+    <form action="{{ url_for('handle_request') }}" method="post">
+        <input type="text">
+        <input type="submit">
+    </form>
+  </body>
+</html>

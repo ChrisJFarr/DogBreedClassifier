@@ -261,8 +261,7 @@ dogs for humans.
 
 """
 
-
-# 
+#
 # We suggest the face detector from OpenCV as a potential way to detect human images in your algorithm, but you are
 # free to explore other approaches, especially approaches that make use of deep learning :).  Please use the code
 # cell below to design and test your own face detection algorithm.  If you decide to pursue this _optional_ task,
@@ -291,6 +290,7 @@ dogs for humans.
 
 from keras.applications.resnet50 import ResNet50
 import tensorflow as tf
+
 # define ResNet50 model
 
 # with tf.device("/cpu:0"):
@@ -417,6 +417,7 @@ def dog_detector(img_path):
 
 dog_detections = [dog_detector(img) for img in dog_files_short]
 import numpy as np
+
 np.mean(dog_detections)
 dog_detections_humans = [dog_detector(img) for img in human_files_short]
 np.mean(dog_detections_humans)
@@ -634,12 +635,10 @@ train_files, train_targets = load_dataset('dogImages/train')
 valid_files, valid_targets = load_dataset('dogImages/valid')
 test_files, test_targets = load_dataset('dogImages/test')
 
-
 bottleneck_features = np.load('bottleneck_features/DogVGG16Data.npz')
 train_VGG16 = bottleneck_features['train']
 valid_VGG16 = bottleneck_features['valid']
 test_VGG16 = bottleneck_features['test']
-
 
 # Load and transform datasets
 # from keras.applications import VGG16
@@ -723,6 +722,7 @@ def VGG16_predict_breed(img_path):
     # return dog breed that is predicted by the model
     return dog_names[np.argmax(predicted_vector)]
 
+
 # ---
 # <a id='step5'></a>
 # ## Step 5: Create a CNN to Classify Dog Breeds (using Transfer Learning)
@@ -771,6 +771,7 @@ from glob import glob
 from sklearn.datasets import load_files
 from keras.utils import np_utils
 
+
 def load_dataset(path):
     data = load_files(path)
     dog_files = np.array(data['filenames'])
@@ -785,6 +786,7 @@ test_files, test_targets = load_dataset('dogImages/test')
 
 # TODO: Obtain bottleneck features from another pre-trained CNN.
 import numpy as np
+
 bottleneck_features = np.load('bottleneck_features/DogResnet50Data.npz')
 train_resnet = bottleneck_features['train']
 valid_resnet = bottleneck_features['valid']
@@ -813,6 +815,8 @@ resnet_model.add(Dense(133, activation='softmax'))  # (starter: 79.78)
 # ### (IMPLEMENTATION) Compile the Model
 resnet_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
+# Model summary
+resnet_model.summary()
 
 checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.resnet_model.hdf5',
                                verbose=1, save_best_only=True)
@@ -830,7 +834,6 @@ resnet_model.fit(train_resnet, train_targets,
                  validation_data=(valid_resnet, valid_targets),
                  epochs=200, batch_size=20, callbacks=[checkpointer], verbose=1)
 
-
 # TODO: Load the model weights with the best validation loss.
 # (IMPLEMENTATION) Load the Model with the Best Validation Loss
 # Load the Model with the Best Validation Loss
@@ -846,7 +849,10 @@ resnet_predictions = [np.argmax(resnet_model.predict(np.expand_dims(feature, axi
 # report test accuracy
 test_accuracy = 100 * np.sum(np.array(resnet_predictions) == np.argmax(test_targets, axis=1)) / len(resnet_predictions)
 print('Test accuracy: %.4f%%' % test_accuracy)
+# 80% acc
 
+# Save model
+resnet_model.save("best_dog_breed_model")
 
 # (IMPLEMENTATION) Predict Dog Breed with the Model
 # 
@@ -867,10 +873,12 @@ print('Test accuracy: %.4f%%' % test_accuracy)
 # where `{network}`, in the above filename, should be one of `VGG19`, `Resnet50`, `InceptionV3`, or `Xception`.
 
 # In[ ]:
+from dog_breed_classifier import DogBreedClassifier
 
 
-# TODO: Write a function that takes a path to an image as input
-# and returns the dog breed that is predicted by the model.
+dogClassifier = DogBreedClassifier()
+image_path = "test_images/chris_and_shannon/chris_and_shannon.jpg"
+print(dogClassifier.decide_breed(dogClassifier.predict(image_path)))
 
 
 # ---
