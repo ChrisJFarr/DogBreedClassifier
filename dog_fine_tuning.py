@@ -11,6 +11,8 @@ from keras import optimizers
 import pandas as pd
 from matplotlib import pyplot as plt
 
+# MobileNet details
+#https://joshua19881228.github.io/2017-07-19-MobileNet/
 
 # Training steps:
 # Start with pre-trained MobileNet
