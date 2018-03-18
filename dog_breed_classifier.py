@@ -1,62 +1,111 @@
-# from keras.models import load_model
-# from keras.applications import ResNet50
 import cv2
-# from glob import glob
 import numpy as np
-# sys.path = [os.path.dirname(os.getcwd())] + sys.path
+from keras.models import load_model
+from keras.applications import mobilenet
+from glob import glob
 
 
 class DogBreedClassifier:
 
     def __init__(self):
-        # TODO load saved trained model
-        # self.model = load_model("../best_dog_breed_model")
-        # TODO load resnet convolutional layers
-        # self.resnet_conv = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-        # TODO load dog classes
-        # self.breeds = [item[20:-1] for item in sorted(glob("dogImages/train/*/"))]
-        pass
+        # load start net (the model runs at start of program)
+        self.start_model = load_model('start_net.h5', custom_objects={
+            'relu6': mobilenet.relu6,
+            'DepthwiseConv2D': mobilenet.DepthwiseConv2D})
+        # load saved trained model
+        self.model = load_model('mobilenet.h5', custom_objects={
+            'relu6': mobilenet.relu6,
+            'DepthwiseConv2D': mobilenet.DepthwiseConv2D})
+        # load dog classes
+        self.breeds = [item[20:-1] for item in sorted(glob("dogImages/train/*/"))]
+        # load pre_classify classes for dog, cat, human, neither
+        self.classes = [name[21:-1] for name in sorted(glob("custom_images/images/*/"))]
 
-    def run(self, image_path: str) -> str:
+    def run(self, image_path: str):
+        """
+        First check to see what type of object is in image.
+        If human, dog, or cat detected the predict dog breed.
+        Print messages.
+        :param image_path: String
+        :return: None
+        """
         img = self.get_image(image_path)
-        pred_dict = self.predict(img)
-
-        return "Done"
+        preclass, proceed = self.pre_classify(img)
+        print(preclass)
+        if proceed:
+            pred_dict = self.predict(img)
+            print(self.decide_breed(pred_dict))
+        return None
 
     @staticmethod
     def get_image(image_path: str):
         img = cv2.imread(image_path)
         assert img is not None, "Check image path, no image found."
+        img = img / 1.  # Convert to float to avoid error, keras bug
         return img
 
-    def predict(self, img) -> dict:
-        # TODO: Write a function that takes a path to an image as input
-        # and returns the dog breed that is predicted by the model.
-        # TODO take path and load image, handle any type?
-        # TODO try, if None then wrong image address
-        # TODO convert image to 224 * 224
+    def pre_classify(self, img) -> (str, bool):
+        """
+        Take location of image and return if it's a human, cat, dog, or neither.
+        Example output:
+        This looks like a human, I'll pretend it's a dog.
+        This looks like a cat, I'll pretend it's a dog.
+        I don't see a dog, cat, or a human in this photo... are you trying to trick me?
+        :param img:
+        :return:
+        """
+        # Convert image to 224 * 224
         img = cv2.resize(img, dsize=(224, 224))
-        # TODO convert input to resnet shape and transform using convolutional layers
-        conv_data = self.resnet_conv.predict(np.expand_dims(img, axis=0))
-        # TODO generate top 3 predictions
-        prediction = self.model.predict(conv_data)[0]
+        # Preprocess data
+        img = np.expand_dims(img, axis=0)
+        # Preprocess input for mobilenet
+        img = mobilenet.preprocess_input(img)
+        # generate predictions
+        prediction = self.start_model.predict(img)
+        # Class
+        pred_class = self.classes[np.argmax(prediction)]
+        # Response dictionary
+        response_dict = dict([("dog", ("This looks like a dog, let me guess the breed.", True)),
+                              ("cat", ("This looks like a cat, I'll pretend it's a dog.", True)),
+                              ("person", ("This looks like a person, I'll pretend it's a dog.", True)),
+                              ("other", ("I don't see a dog, cat, or a human in this photo... "
+                                         "are you trying to trick me?", False))])
+        return response_dict[pred_class]
+
+    def predict(self, img) -> dict:
+        """
+        Generate prediction dictionary with top 3 predicted dog breeds
+        :param img:
+        :return:
+        """
+        # Convert image to 224 * 224
+        img = cv2.resize(img, dsize=(224, 224))
+        # Preprocess data
+        img = np.expand_dims(img, axis=0)
+        # Preprocess input for mobilenet
+        img = mobilenet.preprocess_input(img)
+        # generate top 3 predictions
+        prediction = self.model.predict(img)[0]
         # print(np.argmax(prediction))
         top_3 = prediction.argsort()[-3:][::-1]
         top_3_pred_values = [prediction[i] for i in top_3]
-
         # List top 3 breeds in order
         prediction_dict = dict(zip([self.breeds[i] for i in top_3], top_3_pred_values))
+
         return prediction_dict
 
     @staticmethod
     def decide_breed(pred: dict) -> str:
-        # TODO show mixed breed predictions
-        # TODO if 2nd highest > .25 and 1st highest less than .6 then mixed breed (2)
-        # TODO if top 2 < .6 combined and top 3 > .75 then 3 breed mix
+        """
+        Allow for mixed breed predictions.
+        if 2nd highest > .25 and 1st highest less than .6 then mixed breed (2)
+        if top 2 < .6 combined and top 3 > .75 then 3 breed mix
         # I think that is a Yorkie purebred
         # I think that is a Yorkie and Japanese Chin mix
         # I think that is a Yorkie, Japanese Chin, and Lab mix
-        # Store keys
+        :param pred: Prediction dict from predict method
+        :return: String to display as prediction output
+        """
         for k, v in pred.items():
             pred[k.replace("_", " ")] = pred.pop(k)
 
@@ -73,6 +122,6 @@ class DogBreedClassifier:
         else:
             breed = "I'm honestly not that sure. \n" \
                     "Could be a %s, could be a %s, could be a %s. \n" \
-                    "Or maybe it's a mix of all those and something else."\
+                    "Or maybe it's a mix of all those and something else." \
                     % (top1, top2, top3)
         return breed

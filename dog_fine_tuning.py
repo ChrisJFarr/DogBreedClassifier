@@ -12,7 +12,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 # MobileNet details
-#https://joshua19881228.github.io/2017-07-19-MobileNet/
+# https://joshua19881228.github.io/2017-07-19-MobileNet/
 
 # Training steps:
 # Start with pre-trained MobileNet
@@ -43,6 +43,11 @@ if __name__ == "__main__":
     model.add(layers.Dense(1492, activation='relu'))
     model.add(layers.Dropout(0.4))
     model.add(layers.Dense(133, activation='softmax'))
+
+    # no added dense 77%
+    # add 500 layer 76% val, cut short (lr:1e-
+
+    model.summary()
 
     # Show summary for verification
     # Check the trainable status of the individual layers
@@ -118,7 +123,7 @@ if __name__ == "__main__":
     checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.mobile_net.hdf5',
                                    verbose=1, save_best_only=True)
 
-    early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=15, verbose=1, mode='auto')
+    early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=5, verbose=1, mode='auto')
 
     train_datagen = ImageDataGenerator(
         preprocessing_function=preprocess_input,
